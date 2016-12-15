@@ -1,0 +1,309 @@
+<!-- START SIGMA IMPORTS -->
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+<script src="../build/sigma.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+
+
+
+<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+    #control-pane {
+      top: 10px;
+      /*bottom: 10px;*/
+      right: 10px;
+      position: absolute;
+      width: 300px;
+      background-color: rgb(249, 247, 237);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #control-pane > div {
+      margin: 10px;
+      overflow-x: auto;
+    }
+     #notice {
+      top: 40%;
+      left: 35%;
+      position: absolute;
+      z-index: 1000;
+      background-color: white;
+    }
+    .hidden {
+      display:none;
+    }
+  </style>
+  <div id="graph-container">
+    <div id="notice" class=""><h2>Wait for layout rendering...</h2></div>
+  </div>
+</div>
+<div id="control-pane">    
+    <div>
+      <p>No. of relations (<span id="min-degree-val">0</span>)
+      0 <input id="min-degree" type="range" min="0" max="0" value="0"> <span id="max-degree-value">0</span></p>
+    </div>
+    <div>
+      <p>Min. node rating (<span id="min-rating-val">0</span>)
+      1 <input id="node-category" type="range" min="1" max="9" value="0"> 9</p>
+    </div>
+    <div>
+      <button id="reset-btn">Reset filters</button>
+    </div>
+    <div id="dump" class="hidden"></div>
+  </div>
+</div>
+
+<i class="fa fa-camera-retro fa-1x" style="color: rgba(0,0,0,0);"></i>
+
+
+<script>
+/**
+ * Here is just a basic example on how to properly display a graph
+ * exported from Gephi as a JSON file, with the JSON Exporter plugin from
+ * the Oxford Internet Institute:
+ *
+ *  > https://marketplace.gephi.org/plugin/json-exporter/
+ *
+ * The plugin sigma.parsers.json can load and parse the JSON graph file,
+ * and instantiate sigma when the graph is received.
+ *
+ * The object given as the second parameter is the base of the instance
+ * configuration object. The plugin will just add the "graph" key to it
+ * before the instanciation.
+ */
+
+var data,
+    colors = [
+     '#E91E63',
+     '#FF5722',
+     '#FF9800',
+     '#9E9D24',
+     '#689F38',
+     '#009688',
+     '#0097A7',
+     '#0288D1',
+     '#3F51B5'
+            ],
+    icons = [
+          "\uF11b",
+          "\uF11c",
+          "\uF11d",
+          "\uF128",
+          "\uF129",
+          "\uF130",
+          "\uF131",
+          "\uF132"
+        ];
+
+var A = $.getJSON('graphnodes.json');
+var B = $.getJSON('graphedges.json');
+
+var _ = {
+  $: function (id) {
+    return document.getElementById(id);
+  },
+
+  all: function (selectors) {
+    return document.querySelectorAll(selectors);
+  },
+
+  removeClass: function(selectors, cssClass) {
+    var nodes = document.querySelectorAll(selectors);
+    var l = nodes.length;
+    for ( i = 0 ; i < l; i++ ) {
+      var el = nodes[i];
+      // Bootstrap compatibility
+      el.className = el.className.replace(cssClass, '');
+    }
+  },
+
+  addClass: function (selectors, cssClass) {
+    var nodes = document.querySelectorAll(selectors);
+    var l = nodes.length;
+    for ( i = 0 ; i < l; i++ ) {
+      var el = nodes[i];
+      // Bootstrap compatibility
+      if (-1 == el.className.indexOf(cssClass)) {
+        el.className += ' ' + cssClass;
+      }
+    }
+  },
+
+  show: function (selectors) {
+    this.removeClass(selectors, 'hidden');
+  },
+
+  hide: function (selectors) {
+    this.addClass(selectors, 'hidden');
+  },
+
+  toggle: function (selectors, cssClass) {
+    var cssClass = cssClass || "hidden";
+    var nodes = document.querySelectorAll(selectors);
+    var l = nodes.length;
+    for ( i = 0 ; i < l; i++ ) {
+      var el = nodes[i];
+      //el.style.display = (el.style.display != 'none' ? 'none' : '' );
+      // Bootstrap compatibility
+      if (-1 !== el.className.indexOf(cssClass)) {
+        el.className = el.className.replace(cssClass, '');
+      } else {
+        el.className += ' ' + cssClass;
+      }
+    }
+  }
+};
+
+function updatePane (graph, filter) {
+  var maxDegree = 20;
+  // graph.nodes().forEach(function(n) {
+   // maxDegree = Math.max(maxDegree, graph.degree(n.id));
+ // })
+  _.$('min-degree').max = maxDegree;
+  _.$('max-degree-value').textContent = maxDegree;
+  _.$('reset-btn').addEventListener("click", function(e) {
+    _.$('min-degree').value = 0;
+    _.$('min-degree-val').textContent = '0';
+    _.$('node-category').value = 0;
+    _.$('min-rating-val').textContent = '0';
+    filter.undo().apply();
+    _.$('dump').textContent = '';
+    _.hide('#dump');
+  });
+}
+
+
+$.when(A,B).done(function(aResult, bResult){//when all request are successful
+  //  data = JSON.parse(aResult)
+  data = Object.assign({},aResult[0], bResult[0]);
+//  console.log(data);  
+
+  var s, i;
+ 
+  for (i = 0; i < data.nodes.length; i++) {
+    data.nodes[i].x = Math.random() * 10; // 100 * Math.cos(2 * i * Math.PI / l);
+    data.nodes[i].y = Math.random() * 10; // 100 * Math.sin(2 * i * Math.PI / l);
+    data.nodes[i].size = Math.ceil(Math.random()*9);
+    data.nodes[i].color = colors[Math.floor(Math.random() * 10)];
+    data.nodes[i].ctype = "knowledge";
+    data.nodes[i].icon = {
+      font: 'FontAwesome',
+      scale: 1.0, // size ratio of (icon / node)
+      color: '#fff',
+      content: icons[Math.floor(Math.random() * icons.length)]
+    };
+  }
+
+  for (i = 0; i < data.edges.length; i++) {
+    data.edges[i].size = Math.ceil(Math.random()*5);
+    data.edges[i].label = "asdf";
+    data.edges[i].color = '#90A4AE';
+    data.edges[i].hover_color = '#263238';
+  }
+
+  s = new sigma({
+    graph: data,
+   // container: 'graph-container',
+     renderers: [{
+      container: document.getElementById('graph-container'),
+      type: 'canvas' // sigma.renderers.canvas works as well
+    }],
+    settings: {
+      defaultEdgeColor: '#607D8B',
+      defaultLabelColor: '#37474F',
+      defaultNodeColor: '#607D8B',
+      defaultNodeBorderColor: '#37474F',
+      labelHoverShadowColor: '#263238',
+      nodeHoverColor: 'default',
+      defaultNodeHoverColor: '#263238',
+      defaultHoverLabelBGColor: '#ECEFF1',
+      defaultLabelHoverColor: '#263238',
+      defaultEdgeHoverColor: '#263238',
+  //    nodeBorderSize: 2,
+  //    nodeHoverBorderSize: 2,
+  //    nodeActiveBorderSize: 2,
+      defaultLabelSize: 12,
+      edgeHoverSizeRatio: 1,
+      enableHovering: true,
+      enableEdgeHovering: true,
+      drawEdgeLabels: true,
+      edgeHoverExtremities: true,
+      edgeLabelSize: 'fixed',
+      edgeLabelSizePowRatio: 1,
+      edgeLabelThreshold: 6,
+   //   doubleClickEnabled: false,
+      minEdgeSize: 0.5,
+      maxEdgeSize: 4,
+      edgeHoverColor: 'edge',
+      edgeHoverExtremities: true,
+      animationsTime: 2500
+    }
+  });
+
+  var fa = sigma.layouts.startForceAtlas2(s,{
+      worker: true, 
+      barnesHutOptimize: true,
+      startingIterations: 4,
+      iterationsPerRender: 1,
+      slowDown: 1,
+      gravity: 3,
+      autoStop: true,
+      maxIterations: 50,
+      background: true,
+      easing: 'cubicInOut'
+  });
+
+  fa.bind('start stop interpolate', function(e) {
+    console.log(e.type);
+    var el = document.getElementById('notice');
+    if (e.type === 'start') {
+      el.className = '';
+    }
+    else if (e.type === 'interpolate') {
+      el.className = '';
+    }
+    else if (e.type === 'stop') {
+      el.className = 'hidden';
+    }
+  });
+
+  filter = new sigma.plugins.filter(s);
+
+  updatePane(s.graph, filter);
+
+  function applyMinDegreeFilter(e) {
+    var v = e.target.value;
+    _.$('min-degree-val').textContent = v;
+    filter
+      .undo('min-degree')
+      .nodesBy(function(n) {
+        return this.degree(n.id) >= v;
+      }, 'min-degree')
+      .apply();
+  }
+
+  function applyCategoryFilter(e) {
+    var c = e.target.value;
+    _.$('min-rating-val').textContent = c;
+    filter
+      .undo('node-category')
+      .nodesBy(function(n) {
+        return n.size >= c;
+      }, 'node-category')
+      .apply();
+  }
+
+  _.$('min-degree').addEventListener("input", applyMinDegreeFilter);  
+  _.$('node-category').addEventListener("input", applyCategoryFilter);
+  s.bind('clickNode', function(e) {
+    window.location = "/node/" + e.data.node.id;
+  });
+
+});
+
+</script>

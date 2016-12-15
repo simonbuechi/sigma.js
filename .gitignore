@@ -3,4 +3,6 @@ build/*
 *.tgz
 *.log
 *.swp
+examples/graphedges.json
+examples/graphnodes.json
 .DS_Store
