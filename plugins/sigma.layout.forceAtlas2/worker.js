@@ -1,12 +1,19 @@
 ;(function(undefined) {
   'use strict';
 
+  if (typeof sigma === 'undefined')
+    throw 'sigma is not declared';
+
+  // Initialize package:
+  sigma.utils.pkg('sigma.layouts');
+
   /**
    * Sigma ForceAtlas2.5 Webworker
    * ==============================
    *
    * Author: Guillaume Plique (Yomguithereal)
    * Algorithm author: Mathieu Jacomy @ Sciences Po Medialab & WebAtlas
+   * Autostop author: Sébastien Heymann @ Linkurious
    * Version: 1.0.3
    */
 
@@ -49,7 +56,10 @@
         barnesHutOptimize: false,
         barnesHutTheta: 0.5,
         startingIterations: 1,
-        iterationsPerRender: 1
+        iterationsPerRender: 1,
+        maxIterations: 1000,
+        avgDistanceThreshold: 0.01,
+        autoStop: false
       }
     };
 
@@ -172,6 +182,7 @@
      * Algorithm initialization
      */
 
+    // TODO: autosettings
     function init(nodes, edges, config) {
       config = config || {};
       var i, l;
@@ -204,6 +215,8 @@
           coefficient,
           xDist,
           yDist,
+          oldxDist,
+          oldyDist,
           ewc,
           mass,
           distance,
@@ -237,6 +250,7 @@
 
       if (W.settings.barnesHutOptimize) {
 
+        // TODO: is Infinity possible in a FloatArray?
         var minX = Infinity,
             maxX = -Infinity,
             minY = Infinity,
@@ -492,7 +506,7 @@
 
       // 2) Repulsion
       //--------------
-      // NOTES: adjustSizes = antiCollision & scalingRatio = coefficient
+      // NOTES: adjustSize = antiCollision & scalingRatio = coefficient
 
       if (W.settings.barnesHutOptimize) {
         coefficient = W.settings.scalingRatio;
@@ -522,7 +536,7 @@
                 xDist = NodeMatrix[np(n, 'x')] - RegionMatrix[rp(r, 'massCenterX')];
                 yDist = NodeMatrix[np(n, 'y')] - RegionMatrix[rp(r, 'massCenterY')];
 
-                if (W.settings.adjustSizes) {
+                if (W.settings.adjustSize) {
 
                   //-- Linear Anti-collision Repulsion
                   if (distance > 0) {
@@ -578,7 +592,7 @@
 
                 distance = Math.sqrt(xDist * xDist + yDist * yDist);
 
-                if (W.settings.adjustSizes) {
+                if (W.settings.adjustSize) {
 
                   //-- Linear Anti-collision Repulsion
                   if (distance > 0) {
@@ -630,7 +644,7 @@
             xDist = NodeMatrix[np(n1, 'x')] - NodeMatrix[np(n2, 'x')];
             yDist = NodeMatrix[np(n1, 'y')] - NodeMatrix[np(n2, 'y')];
 
-            if (W.settings.adjustSizes) {
+            if (W.settings.adjustSize) {
 
               //-- Anticollision Linear Repulsion
               distance = Math.sqrt(xDist * xDist + yDist * yDist) -
@@ -736,7 +750,12 @@
         w = EdgeMatrix[ep(e, 'weight')];
 
         // Edge weight influence
-        ewc = Math.pow(w, W.settings.edgeWeightInfluence);
+        if (W.settings.edgeWeightInfluence === 0)
+          ewc = 1
+        else if (W.settings.edgeWeightInfluence === 1)
+          ewc = w;
+        else
+          ewc = Math.pow(w, W.settings.edgeWeightInfluence);
 
         // Common measures
         xDist = NodeMatrix[np(n1, 'x')] - NodeMatrix[np(n2, 'x')];
@@ -846,7 +865,8 @@
       var force,
           swinging,
           traction,
-          nodespeed;
+          nodespeed,
+          alldistance = 0;
 
       // MATH: sqrt and square distances
       if (W.settings.adjustSizes) {
@@ -883,6 +903,9 @@
             nodespeed =
               0.1 * Math.log(1 + traction) / (1 + Math.sqrt(swinging));
 
+            oldxDist = NodeMatrix[np(n, 'x')];
+            oldyDist = NodeMatrix[np(n, 'y')];
+
             // Updating node's positon
             NodeMatrix[np(n, 'x')] =
               NodeMatrix[np(n, 'x')] + NodeMatrix[np(n, 'dx')] *
@@ -890,6 +913,13 @@
             NodeMatrix[np(n, 'y')] =
               NodeMatrix[np(n, 'y')] + NodeMatrix[np(n, 'dy')] *
               (nodespeed / W.settings.slowDown);
+
+            xDist = NodeMatrix[np(n, 'x')];
+            yDist = NodeMatrix[np(n, 'y')];
+            distance = Math.sqrt(
+              Math.pow(xDist - oldxDist, 2) + Math.pow(yDist - oldyDist, 2)
+            );
+            alldistance += distance;
           }
         }
       }
@@ -925,6 +955,9 @@
                 (1 + Math.sqrt(swinging))
               ));
 
+            oldxDist = NodeMatrix[np(n, 'x')];
+            oldyDist = NodeMatrix[np(n, 'y')];
+
             // Updating node's positon
             NodeMatrix[np(n, 'x')] =
               NodeMatrix[np(n, 'x')] + NodeMatrix[np(n, 'dx')] *
@@ -932,12 +965,29 @@
             NodeMatrix[np(n, 'y')] =
               NodeMatrix[np(n, 'y')] + NodeMatrix[np(n, 'dy')] *
               (nodespeed / W.settings.slowDown);
+
+            xDist = NodeMatrix[np(n, 'x')];
+            yDist = NodeMatrix[np(n, 'y')];
+            distance = Math.sqrt(
+              Math.pow(xDist - oldxDist, 2) + Math.pow(yDist - oldyDist, 2)
+            );
+            alldistance += distance;
           }
         }
       }
 
       // Counting one more iteration
       W.iterations++;
+
+      // Auto stop.
+      // The greater the ratio nb nodes / nb edges,
+      // the greater the number of iterations needed to converge.
+      if (W.settings.autoStop) {
+        W.converged = (
+          W.iterations > W.settings.maxIterations ||
+          alldistance / W.nodesLength < W.settings.avgDistanceThreshold
+        );
+      }
     }
 
     /**
@@ -951,20 +1001,10 @@
 
       // From same document as sigma
       sendNewCoords = function() {
-        var e;
-
-        if (document.createEvent) {
-          e = document.createEvent('Event');
-          e.initEvent('newCoords', true, false);
-        }
-        else {
-          e = document.createEventObject();
-          e.eventType = 'newCoords';
-        }
-
-        e.eventName = 'newCoords';
+        var e = new Event('newCoords');
         e.data = {
-          nodes: NodeMatrix.buffer
+          nodes: NodeMatrix.buffer,
+          converged: W.converged
         };
         requestAnimationFrame(function() {
           document.dispatchEvent(e);
@@ -976,7 +1016,10 @@
       // From a WebWorker
       sendNewCoords = function() {
         self.postMessage(
-          {nodes: NodeMatrix.buffer},
+          {
+            nodes: NodeMatrix.buffer,
+            converged: W.converged
+          },
           [NodeMatrix.buffer]
         );
       };
@@ -1114,16 +1157,14 @@
   }
 
   if (inWebWorker) {
-
     // We are in a webworker, so we launch the Worker function
     eval(getWorkerFn());
   }
   else {
-
     // We are requesting the worker from sigma, we retrieve it therefore
     if (typeof sigma === 'undefined')
       throw 'sigma is not declared';
 
-    sigma.prototype.getForceAtlas2Worker = getWorkerFn;
+    sigma.layouts.getForceAtlas2Worker = getWorkerFn;
   }
 }).call(this);

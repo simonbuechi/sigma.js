@@ -25,16 +25,16 @@ module.exports = function(grunt) {
 
     // Renderers:
     'src/renderers/sigma.renderers.canvas.js',
-    'src/renderers/sigma.renderers.webgl.js',
-    'src/renderers/sigma.renderers.svg.js',
+//    'src/renderers/sigma.renderers.webgl.js',
+//    'src/renderers/sigma.renderers.svg.js',
     'src/renderers/sigma.renderers.def.js',
 
     // Sub functions per engine:
-    'src/renderers/webgl/sigma.webgl.nodes.def.js',
-    'src/renderers/webgl/sigma.webgl.nodes.fast.js',
-    'src/renderers/webgl/sigma.webgl.edges.def.js',
-    'src/renderers/webgl/sigma.webgl.edges.fast.js',
-    'src/renderers/webgl/sigma.webgl.edges.arrow.js',
+//    'src/renderers/webgl/sigma.webgl.nodes.def.js',
+//    'src/renderers/webgl/sigma.webgl.nodes.fast.js',
+//    'src/renderers/webgl/sigma.webgl.edges.def.js',
+//    'src/renderers/webgl/sigma.webgl.edges.fast.js',
+//    'src/renderers/webgl/sigma.webgl.edges.arrow.js',
     'src/renderers/canvas/sigma.canvas.labels.def.js',
     'src/renderers/canvas/sigma.canvas.hovers.def.js',
     'src/renderers/canvas/sigma.canvas.nodes.def.js',
@@ -47,12 +47,12 @@ module.exports = function(grunt) {
     'src/renderers/canvas/sigma.canvas.edgehovers.arrow.js',
     'src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js',
     'src/renderers/canvas/sigma.canvas.extremities.def.js',
-    'src/renderers/svg/sigma.svg.utils.js',
-    'src/renderers/svg/sigma.svg.nodes.def.js',
-    'src/renderers/svg/sigma.svg.edges.def.js',
-    'src/renderers/svg/sigma.svg.edges.curve.js',
-    'src/renderers/svg/sigma.svg.labels.def.js',
-    'src/renderers/svg/sigma.svg.hovers.def.js',
+//    'src/renderers/svg/sigma.svg.utils.js',
+//    'src/renderers/svg/sigma.svg.nodes.def.js',
+//    'src/renderers/svg/sigma.svg.edges.def.js',
+//    'src/renderers/svg/sigma.svg.edges.curve.js',
+//    'src/renderers/svg/sigma.svg.labels.def.js',
+//    'src/renderers/svg/sigma.svg.hovers.def.js',
 
     // Middlewares:
     'src/middlewares/sigma.middlewares.rescale.js',
@@ -62,7 +62,37 @@ module.exports = function(grunt) {
     'src/misc/sigma.misc.animation.js',
     'src/misc/sigma.misc.bindEvents.js',
     'src/misc/sigma.misc.bindDOMEvents.js',
-    'src/misc/sigma.misc.drawHovers.js'
+    'src/misc/sigma.misc.drawHovers.js',
+
+    // simonbuechi: add plugins directly
+    'plugins/sigma.parsers.json/sigma.parsers.json.js',
+    'plugins/sigma.renderers.edgeLabels/sigma.canvas.edges.labels.def.js',
+    'plugins/sigma.renderers.edgeLabels/settings.js',    
+    'plugins/sigma.plugins.filter/sigma.plugins.filter.js',
+    'plugins/sigma.layout.forceAtlas2/supervisor.js',
+    'plugins/sigma.layout.forceAtlas2/worker.js',
+//    'plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js',
+    'plugins/sigma.plugins.neighborhoods/sigma.plugins.neighborhoods.js',
+    'plugins/sigma.plugins.animate/sigma.plugins.animate.js',
+
+    'plugins/sigma.renderers.linkurious/settings.js',
+ //   'plugins/sigma.renderers.linkurious/webgl/sigma.webgl.nodes.def.js',
+  //  'plugins/sigma.renderers.linkurious/webgl/sigma.webgl.nodes.fast.js',
+   // 'plugins/sigma.renderers.linkurious/webgl/sigma.webgl.edges.def.js',
+  //  'plugins/sigma.renderers.linkurious/webgl/sigma.webgl.edges.fast.js',
+   // 'plugins/sigma.renderers.linkurious/webgl/sigma.webgl.edges.arrow.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.labels.def.js',
+//    'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.hovers.def.js',
+    'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.def.js'
+//    'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.cross.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.diamond.js',
+  //  'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.equilateral.js',
+//    'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.square.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.nodes.star.js',
+//    'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.edges.def.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.edges.curve.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.edges.arrow.js',
+ //   'plugins/sigma.renderers.linkurious/canvas/sigma.canvas.edges.curvedArrow.js'
   ];
 
   var npmJsFiles = coreJsFiles.slice(0);
