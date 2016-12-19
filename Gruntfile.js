@@ -71,7 +71,7 @@ module.exports = function(grunt) {
     'plugins/sigma.plugins.filter/sigma.plugins.filter.js',
     'plugins/sigma.layout.forceAtlas2/supervisor.js',
     'plugins/sigma.layout.forceAtlas2/worker.js',
-//    'plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js',
+    'plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js',
     'plugins/sigma.plugins.neighborhoods/sigma.plugins.neighborhoods.js',
     'plugins/sigma.plugins.animate/sigma.plugins.animate.js',
 

@@ -1,7 +1,6 @@
 <!-- START SIGMA IMPORTS -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 <script src="../build/sigma.min.js"></script>
-<script src="../plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
 <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 
 
@@ -44,18 +43,17 @@
   <p>Min. node rating: <span id="min-rating-val">0</span> 
   <input id="node-rating" max="9" min="1" type="range" value="0" /> </p>
   <div>
-    <button id="force-btn">Start/Stop Layout</button>
+    <button id="reset-btn" class="btn">Reset filters</button>
   </div>
   <div>
-<input list="suggestionList" id="answerInput">
-<datalist id="suggestionList">
-    <option data-value="42">The answer</option>
-</datalist>
-<input type="hidden" name="answer" id="answerInput-hidden">
+    <button id="force-btn" class="btn hidden">Start Layout</button>
   </div>
-
   <div>
-    <button id="reset-btn">Reset filters</button>
+    <input list="suggestionList" id="answerInput">
+    <datalist id="suggestionList">
+        <option data-value="42">The answer</option>
+    </datalist>
+    <input type="hidden" name="answer" id="answerInput-hidden">
   </div>
   <div class="hidden" id="dump">&nbsp;</div>
 </div>
@@ -184,13 +182,7 @@ var _ = {
             sigma.layouts.startForceAtlas2(s);
           }
         });
-
-
-
-        _.$('zoom-btn').addEventListener("click", function(e) {
-          console.log(e);
-          s.zoomToNode(s.graph.nodes()[26], 0.05);
-        });        
+      
       }
 
       $.when(A,B).done(function(aResult, bResult){//when all request are successful
@@ -258,7 +250,7 @@ var _ = {
             startingIterations: 1,
             iterationsPerRender: 1,
             slowDown: 5,
-            gravity: 25,
+            gravity: 45,
             autoStop: true,
             maxIterations: 100
           //  background: false,
@@ -267,15 +259,17 @@ var _ = {
 
         fa.bind('start stop interpolate', function(e) {
           console.log(e.type);
-          var el = document.getElementById('notice');
           if (e.type === 'start') {
-            el.className = '';
+            // $('#notice').className = '';
+            //$('#force-btn').addClass('hidden');
           }
           else if (e.type === 'interpolate') {
-            el.className = '';
+           // $('#notice').className = '';
+          //  $('#force-btn').className = 'hidden';
           }
           else if (e.type === 'stop') {
-            el.className = 'hidden';
+            $('#notice').addClass('hidden');
+            $('#force-btn').removeClass('hidden');
           }
         });
 
