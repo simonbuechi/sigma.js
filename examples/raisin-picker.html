@@ -1,6 +1,7 @@
 <!-- START SIGMA IMPORTS -->
 <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 <script src="../build/sigma.min.js"></script>
+<script src="../plugins/sigma.plugins.dragNodes/sigma.plugins.dragNodes.js"></script>
 <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
 
 
@@ -42,9 +43,16 @@
   <input id="min-degree" max="0" min="0" type="range" value="0" /> </p>
   <p>Min. node rating: <span id="min-rating-val">0</span> 
   <input id="node-rating" max="9" min="1" type="range" value="0" /> </p>
-  
-  <input type="text" id="node-label" list="datalist" placeholder="e.g. datalist">
-  <datalist id="datalist"></datalist>
+  <div>
+    <button id="force-btn">Start/Stop Layout</button>
+  </div>
+  <div>
+<input list="suggestionList" id="answerInput">
+<datalist id="suggestionList">
+    <option data-value="42">The answer</option>
+</datalist>
+<input type="hidden" name="answer" id="answerInput-hidden">
+  </div>
 
   <div>
     <button id="reset-btn">Reset filters</button>
@@ -79,6 +87,15 @@ var data,
         ];
 var A = $.getJSON('graphnodes.json');
 var B = $.getJSON('graphedges.json');
+sigma.prototype.zoomToNode = function(node, ratio, camera){
+    if(typeof camera == "undefined"){
+        camera = this.cameras[0];
+    }
+    camera.ratio = ratio;
+    camera.x = node[camera.readPrefix+"x"];
+    camera.y = node[camera.readPrefix+"y"]; 
+    this.refresh();
+}
 var _ = {
   $: function (id) {
     return document.getElementById(id);
@@ -139,8 +156,8 @@ var _ = {
         var maxDegree = 20;
         var options = '';
         graph.nodes().forEach(function(n) {
-          options += '<option value="'+n.label+'" />';
-          document.getElementById('datalist').innerHTML = options;
+          options += '<option data-value="'+n.id+'" />'+n.label;
+          document.getElementById('suggestionList').innerHTML = options;
         });
 
         // graph.nodes().forEach(function(n) {
@@ -153,12 +170,27 @@ var _ = {
           _.$('min-degree-val').textContent = '0';
           _.$('node-rating').value = 0;
           _.$('min-rating-val').textContent = '0';
-
-
           filter.undo().apply();
           _.$('dump').textContent = '';
           _.hide('#dump');
         });
+
+        _.$('force-btn').addEventListener("click", function(e) {
+          if(sigma.layouts.isForceAtlas2Running()) {
+            _.$('force-btn').textContent = "Stop Layout";
+            sigma.layouts.stopForceAtlas2();
+          } else {
+            _.$('force-btn').textContent = "Start Layout";
+            sigma.layouts.startForceAtlas2(s);
+          }
+        });
+
+
+
+        _.$('zoom-btn').addEventListener("click", function(e) {
+          console.log(e);
+          s.zoomToNode(s.graph.nodes()[26], 0.05);
+        });        
       }
 
       $.when(A,B).done(function(aResult, bResult){//when all request are successful
@@ -273,6 +305,39 @@ var _ = {
         }
   _.$('min-degree').addEventListener("input", applyMinDegreeFilter);  
   _.$('node-rating').addEventListener("input", applyRatingFilter);
+
+  var dragListener = sigma.plugins.dragNodes(s, s.renderers[0]);
+
+document.querySelector('input[list]').addEventListener('input', function(e) {
+    var input = e.target,
+        list = input.getAttribute('list'),
+        options = document.querySelectorAll('#' + list + ' option'),
+        hiddenInput = document.getElementById(input.id + '-hidden'),
+        inputValue = input.value;
+    hiddenInput.value = inputValue;
+    for(var i = 0; i < options.length; i++) {
+        var option = options[i];
+        if(option.innerText === inputValue) {
+            // hiddenInput.value = option.getAttribute('data-value');
+            console.log(option.getAttribute('data-value'));
+            s.zoomToNode(s.graph.nodes()[option.getAttribute('data-value')], 0.05);
+            break;
+        }
+    }
+});
+
+
+/*
+$("#node-label").on('input', function () {
+    var val = this.value;
+    if($('#datalist').find('option').filter(function(){  
+        return this.value.toUpperCase() === val.toUpperCase();        
+    }).length) {
+        //send ajax request
+        console.log(this.getAttribute('data-value'));
+    }
+});
+*/
 
 });
 

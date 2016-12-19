@@ -59,18 +59,9 @@
       _hoverIndex = {},
       _isMouseDown = false,
       _isMouseOverCanvas = false,
-      _drag = false;
-
-    if (renderer instanceof sigma.renderers.svg) {
-        _mouse = renderer.container.firstChild;
-    }
-
-    // It removes the initial substring ('read_') if it's a WegGL renderer.
-    if (renderer instanceof sigma.renderers.webgl) {
-      _prefix = renderer.options.prefix.substr(5);
-    } else {
+      _drag = false;    
       _prefix = renderer.options.prefix;
-    }
+    
 
     renderer.bind('overNode', nodeMouseOver);
     renderer.bind('outNode', treatOutNode);
