@@ -42,6 +42,10 @@
   <input id="min-degree" max="0" min="0" type="range" value="0" /> </p>
   <p>Min. node rating: <span id="min-rating-val">0</span> 
   <input id="node-rating" max="9" min="1" type="range" value="0" /> </p>
+  
+  <input type="text" id="node-label" list="datalist" placeholder="e.g. datalist">
+  <datalist id="datalist"></datalist>
+
   <div>
     <button id="reset-btn">Reset filters</button>
   </div>
@@ -73,10 +77,8 @@ var data,
           "\uF131",
           "\uF132"
         ];
-
 var A = $.getJSON('graphnodes.json');
 var B = $.getJSON('graphedges.json');
-
 var _ = {
   $: function (id) {
     return document.getElementById(id);
@@ -135,6 +137,12 @@ var _ = {
 
       function updatePane (graph, filter) {
         var maxDegree = 20;
+        var options = '';
+        graph.nodes().forEach(function(n) {
+          options += '<option value="'+n.label+'" />';
+          document.getElementById('datalist').innerHTML = options;
+        });
+
         // graph.nodes().forEach(function(n) {
          // maxDegree = Math.max(maxDegree, graph.degree(n.id));
        // })
@@ -145,6 +153,8 @@ var _ = {
           _.$('min-degree-val').textContent = '0';
           _.$('node-rating').value = 0;
           _.$('min-rating-val').textContent = '0';
+
+
           filter.undo().apply();
           _.$('dump').textContent = '';
           _.hide('#dump');
@@ -261,7 +271,6 @@ var _ = {
             }, 'node-rating')
             .apply();
         }
-
   _.$('min-degree').addEventListener("input", applyMinDegreeFilter);  
   _.$('node-rating').addEventListener("input", applyRatingFilter);
 
