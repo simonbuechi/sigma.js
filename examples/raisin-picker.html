@@ -322,6 +322,65 @@ $.when(A,B).done(function(aResult, bResult){//when all request are successful
   });
 });
 
+ var db = new sigma.plugins.neighborhoods();
+
+document.getElementById('restart-camera').addEventListener('click', function() {
+  s.camera.goTo({
+    x: 0,
+    y: 0,
+    angle: 0,
+    ratio: 1
+  });
+});
+
+db.load('data/arctic.json', function() {
+  // Out function to initialize sigma on a new neighborhood:
+  function refreshGraph(centerNodeId) {
+    // First, let's stop the ForceAtlas2 algorithm:
+    s.killForceAtlas2();
+
+    // Restart the camera:
+    s.camera.goTo({
+      x: 0,
+      y: 0,
+      angle: 0,
+      ratio: 1
+    });
+
+    // Empty the graph:
+    s.graph.clear();
+
+    // Read the graph:
+    s.graph.read(db.neighborhood(centerNodeId));
+
+    // Randomize the positions of the nodes and initialize their size:
+    var i,
+        nodes = s.graph.nodes(),
+        len = nodes.length;
+
+    for (i = 0; i < len; i++) {
+      nodes[i].x = Math.cos(Math.PI * 2 * i / len);
+      nodes[i].y = Math.sin(Math.PI * 2 * i / len);
+    }
+
+    // Refresh the display:
+    s.refresh();
+
+    // Start the ForceAtlas2 algorithm:
+    s.startForceAtlas2({worker: true});
+    document.getElementById('toggle-layout').innerHTML = 'Stop layout';
+  }
+
+  // Let's now bind this new function to the "clickNode" event:
+  s.bind('clickNode', function(event) {
+    if (!event.data.node.center)
+      refreshGraph(event.data.node.id);
+  });
+
+  // And finally, let's initialize the first graph:
+  refreshGraph('1');
+});
+
 /*
 function mute(node) {
   if (!~node.getAttribute('class').search(/muted/))
